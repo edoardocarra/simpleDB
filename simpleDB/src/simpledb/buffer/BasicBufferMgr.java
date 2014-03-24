@@ -54,11 +54,10 @@ class BasicBufferMgr {
 	synchronized Buffer pin(Block blk) {
 		Buffer buff = findExistingBuffer(blk); 
 		if (buff == null) { 
-			//aggiunta riga dove incrementiamo il conteggio di letture su disco per un file
-			SimpleDB.fileMgr().IncrementReadOnDiskForFile(blk.fileName());
+			//prima avevo messo qui il metodod che incrementava il numero di letture su disco
 			//cambiato metodo chooseUnpinnedBuffer -> si adotta la strategia LRU
-			buff=chooseUnpinnedBuffer();
-			//buff=chooseUnpinnedBufferLRU();
+			//buff=chooseUnpinnedBuffer();
+			buff=chooseUnpinnedBufferLRU();
 			if (buff == null)
 				return null; 
 			buff.assignToBlock(blk); 
@@ -79,8 +78,8 @@ class BasicBufferMgr {
 	 * @return the pinned buffer
 	 */
 	synchronized Buffer pinNew(String filename, PageFormatter fmtr) {
-		Buffer buff = chooseUnpinnedBuffer();
-		//Buffer buff = chooseUnpinnedBufferLRU();
+		//Buffer buff = chooseUnpinnedBuffer();
+		Buffer buff = chooseUnpinnedBufferLRU();
 		if (buff == null)
 			return null;
 		buff.assignToNew(filename, fmtr);

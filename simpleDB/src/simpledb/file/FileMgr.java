@@ -1,10 +1,13 @@
 package simpledb.file;
 
 import static simpledb.file.Page.BLOCK_SIZE;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
+
+import simpledb.server.SimpleDB;
 
 /**
  * The SimpleDB file manager.
@@ -27,6 +30,8 @@ public class FileMgr {
 	private Map<String,FileChannel> openFiles = new HashMap<String,FileChannel>();
 	//Aggiungo mappa <NomeFile, Letture su disco per quel file> per le statistiche
 	private Map<String,Integer> readOnDiskForFile = new HashMap<String,Integer>();
+	private Map<String,Integer> writeOnDiskForFile = new HashMap<String,Integer>();
+
 
 
 	/**
@@ -63,6 +68,8 @@ public class FileMgr {
 			bb.clear();
 			FileChannel fc = getFile(blk.fileName());
 			fc.read(bb, blk.number() * BLOCK_SIZE);
+			//aggiunta riga dove incrementiamo il conteggio di letture su disco per un file
+			SimpleDB.fileMgr().IncrementReadOnDiskForFile(blk.fileName());
 		}
 		catch (IOException e) {
 			throw new RuntimeException("cannot read block " + blk);
@@ -79,6 +86,9 @@ public class FileMgr {
 			bb.rewind();
 			FileChannel fc = getFile(blk.fileName());
 			fc.write(bb, blk.number() * BLOCK_SIZE);
+			//aggiunta riga dove incrementiamo il conteggio di scritture su disco per un file
+			SimpleDB.fileMgr().IncrementWriteOnDiskForFile(blk.fileName());
+			
 		}
 		catch (IOException e) {
 			throw new RuntimeException("cannot write block" + blk);
@@ -143,8 +153,8 @@ public class FileMgr {
 		return fc;
 	}
 
-	// Inseriti metodi per ottenere e modificare il numero di letture su disco per un cerco file
-	
+	// Inseriti metodi per ottenere e modificare il numero di letture su disco per un certo file
+
 	public int getReadOnDiskForFile(String filename) {
 		return readOnDiskForFile.get(filename);
 	}
@@ -155,9 +165,28 @@ public class FileMgr {
 		else
 			readOnDiskForFile.put(filename, 0);
 	}
-	
+
 	//ritorno la mappa con le statistiche di lettura dei file
 	public Map<String, Integer> getReadOnFileStat() {
 		return readOnDiskForFile;
 	}
+	
+	// Inseriti metodi per ottenere e modificare il numero di scritture su disco per un certo file
+
+	public int getWriteOnDiskForFile(String filename) {
+		return writeOnDiskForFile.get(filename);
+	}
+
+	public void IncrementWriteOnDiskForFile(String filename) {
+		if(writeOnDiskForFile.containsKey(filename))
+			writeOnDiskForFile.put(filename, getWriteOnDiskForFile(filename)+1);
+		else
+			writeOnDiskForFile.put(filename, 0);
+	}
+	
+	//ritorno la mappa con le statistiche di scrittura dei file
+	public Map<String, Integer> getWriteOnFileStat() {
+		return writeOnDiskForFile;
+	}
+
 }

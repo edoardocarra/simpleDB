@@ -1,7 +1,9 @@
 package studentClient.simpledb;
 
 import java.sql.*;
+
 import simpledb.remote.SimpleDriver;
+import simpledb.server.SimpleDB;
 
 public class CreateStudentDB {
     public static void main(String[] args) {
@@ -84,7 +86,8 @@ public class CreateStudentDB {
 			for (int i=0; i<enrollvals.length; i++)
 				stmt.executeUpdate(s + enrollvals[i]);
 			System.out.println("ENROLL records inserted.");
-
+			
+			
 		}
 		catch(SQLException e) {
 			e.printStackTrace();
