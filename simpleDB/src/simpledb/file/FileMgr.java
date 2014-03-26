@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
 
+import simpledb.buffer.BasicBufferStats;
 import simpledb.server.SimpleDB;
 
 /**
@@ -28,11 +29,7 @@ public class FileMgr {
 	private File dbDirectory;
 	private boolean isNew;
 	private Map<String,FileChannel> openFiles = new HashMap<String,FileChannel>();
-	//Aggiungo mappa <NomeFile, Letture su disco per quel file> per le statistiche
-	private Map<String,Integer> readOnDiskForFile = new HashMap<String,Integer>();
-	private Map<String,Integer> writeOnDiskForFile = new HashMap<String,Integer>();
-
-
+	private Map<String,BasicBufferStats> statistics = new HashMap<String,BasicBufferStats>();
 
 	/**
 	 * Creates a file manager for the specified database.
@@ -69,7 +66,7 @@ public class FileMgr {
 			FileChannel fc = getFile(blk.fileName());
 			fc.read(bb, blk.number() * BLOCK_SIZE);
 			//aggiunta riga dove incrementiamo il conteggio di letture su disco per un file
-			SimpleDB.fileMgr().IncrementReadOnDiskForFile(blk.fileName());
+			IncrementReadOnDiskForFile(blk.fileName());
 		}
 		catch (IOException e) {
 			throw new RuntimeException("cannot read block " + blk);
@@ -87,8 +84,8 @@ public class FileMgr {
 			FileChannel fc = getFile(blk.fileName());
 			fc.write(bb, blk.number() * BLOCK_SIZE);
 			//aggiunta riga dove incrementiamo il conteggio di scritture su disco per un file
-			SimpleDB.fileMgr().IncrementWriteOnDiskForFile(blk.fileName());
-			
+			IncrementWriteOnDiskForFile(blk.fileName());
+
 		}
 		catch (IOException e) {
 			throw new RuntimeException("cannot write block" + blk);
@@ -156,37 +153,40 @@ public class FileMgr {
 	// Inseriti metodi per ottenere e modificare il numero di letture su disco per un certo file
 
 	public int getReadOnDiskForFile(String filename) {
-		return readOnDiskForFile.get(filename);
+		return statistics.get(filename).getLettureSuDisco();
 	}
 
 	public void IncrementReadOnDiskForFile(String filename) {
-		if(readOnDiskForFile.containsKey(filename))
-			readOnDiskForFile.put(filename, getReadOnDiskForFile(filename)+1);
+		if(statistics.containsKey(filename))
+			statistics.get(filename).setLettureSuDisco();
 		else
-			readOnDiskForFile.put(filename, 0);
+			statistics.put(filename, new BasicBufferStats());
 	}
 
 	//ritorno la mappa con le statistiche di lettura dei file
-	public Map<String, Integer> getReadOnFileStat() {
-		return readOnDiskForFile;
+	public Map<String, BasicBufferStats> getStatistics() {
+		return statistics;
 	}
-	
+
 	// Inseriti metodi per ottenere e modificare il numero di scritture su disco per un certo file
 
 	public int getWriteOnDiskForFile(String filename) {
-		return writeOnDiskForFile.get(filename);
+		return statistics.get(filename).getScrittureSuDisco();
 	}
 
 	public void IncrementWriteOnDiskForFile(String filename) {
-		if(writeOnDiskForFile.containsKey(filename))
-			writeOnDiskForFile.put(filename, getWriteOnDiskForFile(filename)+1);
+		if(statistics.containsKey(filename))
+			statistics.get(filename).setScrittureSuDisco();
 		else
-			writeOnDiskForFile.put(filename, 0);
+			statistics.put(filename, new BasicBufferStats());
 	}
-	
-	//ritorno la mappa con le statistiche di scrittura dei file
-	public Map<String, Integer> getWriteOnFileStat() {
-		return writeOnDiskForFile;
+
+	public void PrintStatistics() {
+		for(String file : getStatistics().keySet())
+			System.out.println("Nome File: " + file + " - # Letture su disco: " + getReadOnDiskForFile(file) + " - # Scritture su disco: " + getWriteOnDiskForFile(file));
+		System.out.println("--------------------------------------------");
+
 	}
+
 
 }

@@ -1,5 +1,6 @@
 package simpledb.remote;
 
+import simpledb.file.FileMgr;
 import simpledb.server.SimpleDB;
 import simpledb.tx.Transaction;
 
@@ -58,9 +59,6 @@ class RemoteConnectionImpl extends UnicastRemoteObject implements RemoteConnecti
 	void commit() {
 		tx.commit();
 		tx = new Transaction();
-		for(String file : SimpleDB.fileMgr().getReadOnFileStat().keySet())
-			System.out.println("Nome File:" + file + "# Letture su disco: " + SimpleDB.fileMgr().getReadOnDiskForFile(file));
-		System.out.println("--------------------------------------------");
 	}
 
 	/**
@@ -71,5 +69,6 @@ class RemoteConnectionImpl extends UnicastRemoteObject implements RemoteConnecti
 		tx.rollback();
 		tx = new Transaction();
 	}
+	
 }
 
